@@ -4,7 +4,7 @@ import os.path
 
 
 def log(message):
-    print u"[{}] {}".format(str(datetime.now()), message)
+    print("[{}] {}".format(str(datetime.now()), message))
 
 def load_json(fname, default_value):
     if not os.path.isfile(fname):

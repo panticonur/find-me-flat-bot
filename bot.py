@@ -1,3 +1,4 @@
+from time import sleep
 import gevent
 import json
 import os
@@ -7,12 +8,12 @@ import socks
 from gevent.monkey import patch_all
 import cian
 from utils import log, save_json, load_json
-import urllib2
 import urllib
 from sockshandler import SocksiPyHandler
 
 
-TOKEN='914631520:AAFfEzXIrNgSzzknAsFtgP0tTrOU2vu7ysU'
+TOKEN='5712465853:AAEh9ewqzcrLwFw8PA90MAKKowR_TtpTqGk'
+# pnt_flat_bot PntFlatBot
 PROXY_HOST = 'pryatki.dev'
 PROXY_PORT = 31337
 PROXY_USER = 'vasya'
@@ -21,7 +22,7 @@ REQUEST_UPDATES_TIMEOUT = 45
 PARSER_DELAY = 500
 
 
-opener = urllib2.build_opener(SocksiPyHandler(socks.SOCKS5, PROXY_HOST, PROXY_PORT, True, PROXY_USER, PROXY_PSWRD))
+opener = urllib.request.build_opener(SocksiPyHandler(socks.SOCKS5, PROXY_HOST, PROXY_PORT, True, PROXY_USER, PROXY_PSWRD))
 patch_all()
 messages_queue = []
 data_dir = os.path.join(os.path.dirname(__file__), "data")
@@ -34,6 +35,7 @@ page_path = os.path.join(data_dir, PAGE_FILE)
 chats = load_json(chats_path, {})
 parser_delay = PARSER_DELAY
 parser_countdown = PARSER_DELAY
+
 debug = True
 restart = 0
 
@@ -67,11 +69,11 @@ def remove_chat(chat_id):
 def load_telegram_method(method, params):
     #global debug
     unicode_params = {}
-    for k, v in params.iteritems():
-        val = v.encode("utf8") if isinstance(v, unicode) else v
+    for k, v in params.items():
+        val = v.encode("utf8") if isinstance(v, str) else v
         unicode_params[k] = val
 
-    params_str = urllib.urlencode(unicode_params)
+    params_str = urllib.parse.urlencode(unicode_params)
     #token = os.environ["TG_BOT_TOKEN"]
     url = u"https://api.telegram.org/bot{}/{}?{}".format(TOKEN,
                                                          method,
@@ -100,8 +102,8 @@ def updater():
     log(u"Bot started")
     offset = 0
     while True:
-        #if debug:
-        #    log(u"Updating {}".format(offset))
+        if debug:
+            log(u"Updating {}".format(offset))
         try:
             updates_response = request_updates(offset)
             updates = updates_response.get("result", [])
@@ -229,15 +231,15 @@ def parser():
     global parser_delay
     while True:
         chats_copy = chats.copy()
-        #parser_countdown = parser_delay
-        #while parser_countdown>0:
-        #    gevent.sleep(1)
-        #    parser_countdown -= 1
-
-        chats_copy = chats.copy()
         if len(chats_copy)==0:
-            log(u"Parsing sleep: {}s".format(sleep_time))
-        for chat_id, chat in chats_copy.iteritems():
+            log(u"sleep: {}s".format(parser_delay))
+            parser_countdown = parser_delay
+            while parser_countdown>0:
+                if len(chats)!=0:
+                    break
+                gevent.sleep(1)
+                parser_countdown -= 1
+        for chat_id, chat in chats_copy.items():
             parser_countdown = parser_delay
             while parser_countdown>0:
                 gevent.sleep(1)

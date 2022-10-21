@@ -1,4 +1,4 @@
-import urllib, urllib2
+import urllib
 from bs4 import BeautifulSoup
 from utils import log, save_json, load_json
 import os
@@ -18,8 +18,8 @@ def get_page(url):
     headers = {
         "Content-Type": "text/html; charset=utf-8",
         "User-Aget": USER_AGENT}
-    request = urllib2.Request(url, headers=headers)
-    page = urllib2.urlopen(request)
+    request = urllib.Request(url, headers=headers)
+    page = urllib.urlopen(request)
     data = page.read()
     return data
     
