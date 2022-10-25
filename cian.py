@@ -18,11 +18,11 @@ def get_page(url):
     headers = {
         "Content-Type": "text/html; charset=utf-8",
         "User-Aget": USER_AGENT}
-    request = urllib.Request(url, headers=headers)
-    page = urllib.urlopen(request)
+    request = urllib.request.Request(url, headers=headers)
+    page = urllib.request.urlopen(request)
     data = page.read()
     return data
-    
+
 
 def get_local_page():
     pass
@@ -44,6 +44,9 @@ def has_class(el, str):
 
 def is_flat_link(el):
     href = get_link_href(el)
+    if href is None:
+        return False
+
     if href.find("https://www.cian.ru/rent/flat/") != 0:
         return False
 
@@ -71,7 +74,7 @@ def get_flat_refs(data):
     soup = BeautifulSoup(data, 'html.parser')
     links = soup.find_all('a')
     if debug:
-        log("      links "+str(len(links)))
+        log("get_flat_refs() total links "+str(len(links)))
     flat_links = filter(is_flat_link, links)
 
     flat_refs = map(get_link_href, flat_links)
@@ -92,15 +95,18 @@ def parse(known_path, url):
     # log(page_data)
     #save_to_local_page(page_data)
     # page_data = get_local_page()
-    refs, links = get_flat_refs(page_data)
+    refs, links_count = get_flat_refs(page_data)
+    if debug:
+        print("parsed refs:")
+        print(refs)
     known_refs = get_known_refs(known_path)
     new_refs = refs - known_refs
     log("    {} cian refs(new: {}, known: {})  links: {}".format(len(refs),
                                                                  len(new_refs),
                                                                  len(known_refs),
-                                                                 links))
+                                                                 links_count))
     if len(new_refs) > 0:
         new_known_refs = known_refs.union(new_refs)
         save_known_refs(known_path, new_known_refs)
-        return list(new_refs), links
-    return [], links
+        return list(new_refs), links_count
+    return [], links_count

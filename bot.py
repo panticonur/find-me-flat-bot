@@ -18,7 +18,7 @@ PROXY_HOST = 'pryatki.dev'
 PROXY_PORT = 31337
 PROXY_USER = 'vasya'
 PROXY_PSWRD = '123123123'
-REQUEST_UPDATES_TIMEOUT = 5
+REQUEST_UPDATES_TIMEOUT = 30
 PARSER_DELAY = 500
 
 
@@ -53,7 +53,7 @@ def add_chat(chat_id, tag, url):
     log(u"Added chat {}: #{} {}".format(chat_id, tag, url))
 
 
-def set_delay(chat_id, time):
+def set_delay(chat_id, time): # NOT WORKING
     time = int(time)
     chats[chat_id]['delay'] = time
     save_json(chats_path, chats)
@@ -170,7 +170,7 @@ def handle_message(chat_id, message):
         tag = remove_chat(chat_id)
         send_message(chat_id, "Stop scanning #{}\n{}".format(tag, chat['url']))
 
-    if message == "/stat":
+    if message == "/stat":  # NOT WORKING
         log("Stat")
         chat = chats.get(chat_id, False)
         msg = "chat not found!"
@@ -179,7 +179,8 @@ def handle_message(chat_id, message):
                 chat['tag'], parser_delay, parser_countdown)
         log(msg)
         send_message(chat_id, msg)
-    if message == "/status":
+
+    if message == "/status":  # NOT WORKING
         if debug:
             log("Status  {}".format(json.dumps(chats)))
         else:
@@ -191,6 +192,7 @@ def handle_message(chat_id, message):
                 chat['tag'], parser_delay, parser_countdown, debug, chat['url'])
         log(msg)
         send_message(chat_id, msg)
+
     if message == "/clear":
         log("Clear")
         try:
@@ -205,19 +207,20 @@ def handle_message(chat_id, message):
             os.remove(page_path)
         except:
             log("error remove "+page_path)
-        send_message(chat_id, u"files removed")
-    if message == u"/debug":
+        send_message(chat_id, "files removed")
+
+    if message == "/debug":
         debug = not debug
         cian.debug = not cian.debug
-        msg = u"Debug " + (u"enabled" if debug else u"disabled")
+        msg = "Debug " + ("enabled" if debug else "disabled")
         log(msg)
         send_message(chat_id, msg)
 
-    if message == u"/scan":
+    if message == "/scan":
         parser_countdown = 1
         log("Scan")
 
-    if message == u"/restart":
+    if message == "/restart":
         log(u"Restart")
         global restart
         restart += 1
@@ -229,17 +232,18 @@ def handle_message(chat_id, message):
         else:
             log(u"  skip restart")
             send_message(chat_id, u"try again")
-    if message.find(u"/delay") == 0:
-        log(u"Delay")
-        parts = message.split(u" ")
+
+    if message.find("/delay") == 0: 
+        log("Delay")
+        parts = message.split(" ")
         if len(parts) == 2:
             parser_delay = int(parts[1])
             parser_countdown = parser_delay
-            log(u"  parser_delay set to {}".format(parser_delay))
-            #set_delay(chat_id, parts[1])
-            send_message(chat_id, u"Scanning delay is set to {}s".format(parts[1]))
+            log("  parser_delay set to {}".format(parser_delay))
+            #set_delay(chat_id, parts[1])  # NOT WORKING
+            send_message(chat_id, "Scanning delay is set to {}s".format(parts[1]))
         else:
-            send_message(chat_id, u"Usage: /delay <seconds>")                 
+            send_message(chat_id, u"Usage: /delay <seconds>")
 
 
 def cian_parser_thread():
@@ -262,9 +266,9 @@ def cian_parser_thread():
                 gevent.sleep(1)
                 parser_countdown -= 1
 
-            log("{ parsing {} {}".format(chat_id, chat['url' if debug else 'tag']))
+            log("{{ parsing {} {}".format(chat_id, chat['url' if debug else 'tag']))
             hata_refs, onpage_links_count = cian.parse(known_path, chat['url'])
-            log("} parsed {}, total_onpage_links {}".format(len(hata_refs), onpage_links_count))
+            log("}} parsed {}, total_onpage_links {}".format(len(hata_refs), onpage_links_count))
             if debug:
                 print(hata_refs)
             if hata_refs is None: # fail
