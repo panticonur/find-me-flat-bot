@@ -38,9 +38,13 @@ chats = load_json(chats_path, {})
 parser_delay = PARSER_DELAY
 parser_countdown = PARSER_DELAY
 
-debug = True
+debug = False
 debug2 = False
 restart = 0
+
+cian.debug = debug
+cian.debug2 = debug2
+cian.page_path = page_path
 
 
 if not os.path.exists(data_dir):

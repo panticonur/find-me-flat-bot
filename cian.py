@@ -5,6 +5,8 @@ import os
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 YaBrowser/18.4.1.489 (beta) Yowser/2.5 Safari/537.36"
 debug = True
+debug2 = True
+page_path = ""
 
 def get_known_refs(known_path):
     return set(load_json(known_path, set()))
@@ -25,14 +27,12 @@ def get_page(url):
 
 
 def get_local_page():
-    pass
-    #with open(page_path, "r") as f:
-    #    return f.read()
+    with open(page_path, "r") as f:
+        return f.read()
 
 def save_to_local_page(data):
-    pass
-    #with open(page_path, "w") as f:
-    #    return f.write(data)
+    with open(page_path, "w") as f:
+        return f.write(data)
 
 def has_class(el, str):
     classes = el.attrs.get("class", [])
@@ -83,7 +83,7 @@ def get_flat_refs(data):
 
 
 def parse(known_path, url):
-    global debug
+    global debug, debug2
     try:
         page_data = get_page(url)
     except Exception as e: # urllib2.HTTPError, e:
@@ -92,12 +92,13 @@ def parse(known_path, url):
         if debug:
             raise
         return None, None
-    # log(page_data)
-    #save_to_local_page(page_data)
-    # page_data = get_local_page()
+    if debug2:
+        print(page_data)
+    save_to_local_page(page_data)
+    #page_data = get_local_page()
     refs, links_count = get_flat_refs(page_data)
     if debug:
-        print("parsed refs:")
+        print("cian.parse() refs:")
         print(refs)
     known_refs = get_known_refs(known_path)
     new_refs = refs - known_refs
