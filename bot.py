@@ -272,12 +272,13 @@ def cian_parser_thread():
 
             log("{{ parsing {} {}".format(chat_id, chat['url' if debug else 'tag']))
             hata_refs, onpage_links_count = cian.parse(known_path, chat['url'])
-            log("}} parsed {}, total_onpage_links {}".format(len(hata_refs), onpage_links_count))
+            if hata_refs is None: # fail
+                log("}}")
+                continue
+            log("}} parsed {}, onpage_links_count {}".format(len(hata_refs), onpage_links_count))
+
             if debug:
                 print(hata_refs)
-            if hata_refs is None: # fail
-                continue
-
             if len(hata_refs) > 0:
                 for ref in hata_refs:
                     send_message(chat_id, ref)
