@@ -87,7 +87,7 @@ def parse(known_path, url):
     try:
         page_data = get_page(url)
     except Exception as e: # urllib2.HTTPError, e:
-        log(u"EXCEPTION get_page:")
+        log("EXCEPTION get_page:")
         print(e) #print "Unexpected error:", sys.exc_info()[0]
         if debug:
             raise
