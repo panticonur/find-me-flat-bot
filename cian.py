@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from utils import log, save_json, load_json
 import os
 
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 YaBrowser/18.4.1.489 (beta) Yowser/2.5 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
 debug = True
 debug2 = True
 page_path = ""
