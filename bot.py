@@ -14,12 +14,13 @@ from sockshandler import SocksiPyHandler
 
 BOT_TOKEN='5712465853:AAEh9ewqzcrLwFw8PA90MAKKowR_TtpTqGk'
 # pnt_flat_bot PntFlatBot
+
 PROXY_HOST = 'pryatki.dev'
 PROXY_PORT = 31337
 PROXY_USER = 'vasya'
 PROXY_PSWRD = '123123123'
-REQUEST_UPDATES_TIMEOUT = 30
-PARSER_DELAY = 500
+REQUEST_UPDATES_TIMEOUT = 45
+PARSER_DELAY = 600
 
 
 #proxy_handler = SocksiPyHandler(socks.SOCKS5, PROXY_HOST, PROXY_PORT, True, PROXY_USER, PROXY_PSWRD)
