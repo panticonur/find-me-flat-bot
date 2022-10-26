@@ -32,7 +32,7 @@ def get_local_page():
 
 def save_to_local_page(data):
     with open(page_path, "w") as f:
-        return f.write(data)
+        return f.write(str(data))
 
 def has_class(el, str):
     classes = el.attrs.get("class", [])
