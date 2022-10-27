@@ -313,8 +313,8 @@ def main():
     log("DEBUG = {}".format(debug))
 
     gevent.joinall([
-        gevent.spawn(bot_updater_thread),
         gevent.spawn(cian_parser_thread),
+        gevent.spawn(bot_updater_thread),
     ])
 
 if __name__ == "__main__":
