@@ -12,7 +12,9 @@ def load_json(fname, default_value):
     with open(fname, "r") as fp:
         try:
             data = json.load(fp)
-        except ValueError:
+        except ValueError as e:
+            print("EXCEPTION load json:")
+            print(e)
             data = default_value
         return data
 
