@@ -312,6 +312,8 @@ def main():
     debug = bool(os.getenv('DEBUG', debug))
     log("DEBUG = {}".format(debug))
 
+    print(chats)
+
     gevent.joinall([
         gevent.spawn(cian_parser_thread),
         gevent.spawn(bot_updater_thread),
