@@ -85,12 +85,11 @@ def load_telegram_method(method, params):
     url = u"https://api.telegram.org/bot{}/{}?{}".format(BOT_TOKEN,
                                                          method,
                                                          params_str)
-    if verbose:
-        print("  *( load telegram method: {}".format(method))
     if debug:
+        print("  *( load telegram method: {}".format(method))
         print(url)
     readed = opener.open(url).read()
-    if verbose:
+    if debug:
         print("  *) done {}".format(method))
     jsn = json.loads(readed)#, encoding="utf-8")
     if debug:
