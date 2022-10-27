@@ -40,11 +40,11 @@ parser_delay = PARSER_DELAY
 parser_countdown = PARSER_DELAY
 
 debug = False
-debug2 = False
+verbose = False
 restart = 0
 
 cian.debug = debug
-cian.debug2 = debug2
+cian.verbose = verbose
 cian.page_path = page_path
 
 
@@ -55,14 +55,14 @@ if not os.path.exists(data_dir):
 def add_chat(chat_id, tag, url):
     chats[chat_id] = {'url': url, 'tag': tag}
     save_json(chats_path, chats)
-    log(u"Added chat {}: #{} {}".format(chat_id, tag, url))
+    log("    add chat {}: #{} {}".format(chat_id, tag, url))
 
 
 def set_delay(chat_id, time): # NOT WORKING
     time = int(time)
     chats[chat_id]['delay'] = time
     save_json(chats_path, chats)
-    log(u"Set chat delay {}: {}".format(chat_id, time))
+    log("    set chat delay {}: {}".format(chat_id, time))
 
 
 def remove_chat(chat_id):
@@ -70,12 +70,12 @@ def remove_chat(chat_id):
         tag = chats[chat_id]['tag']
         del chats[chat_id]
         save_json(chats_path, chats)
-        log(u"Chat {}: Removed from queue".format(str(chat_id)))
+        log("    remove chat {}: #{}".format(str(chat_id, tag)))
         return tag
 
 
 def load_telegram_method(method, params):
-    global debug
+    global debug, verbose
     unicode_params = {}
     for k, v in params.items():
         val = v.encode("utf8") if isinstance(v, str) else v
@@ -85,13 +85,16 @@ def load_telegram_method(method, params):
     url = u"https://api.telegram.org/bot{}/{}?{}".format(BOT_TOKEN,
                                                          method,
                                                          params_str)
+    if verbose:
+        print("  *( load telegram method: {}".format(method))
     if debug:
-        log(url)
+        print(url)
     readed = opener.open(url).read()
-    if debug:
-        log("load_telegram_method {}".format(method))
+    if verbose:
+        print("  *) done {}".format(method))
     jsn = json.loads(readed)#, encoding="utf-8")
     if debug:
+        print("  *: readed")
         print(jsn)
     return jsn
 
@@ -109,26 +112,26 @@ def send_message(chat_id, message):
 
 
 def bot_updater_thread():
-    global debug, debug2
-    log(u"Bot started")
+    global debug, verbose
+    log("Bot thread started")
     offset = 0
 
     while True:
 
-        if debug:
-            log(u"Updating {}".format(offset))
+        if verbose:
+            log("Bot updating {}".format(offset))
         try:
             updates_response = request_updates(offset)
             updates = updates_response.get("result", [])
         except Exception as e: # urllib2.HTTPError, e:
-            log("EXCEPTION updater:")
+            log("EXCEPTION Bot updater:")
             print(e) #print "Unexpected error:", sys.exc_info()[0]
             if debug:
                 raise
             continue
 
-        if debug2:
-            log("bot_updater() new responce:")
+        if debug:
+            print("Bot updates:")
             print(updates)
 
         if len(updates) > 0:
@@ -139,7 +142,8 @@ def bot_updater_thread():
             for upd in message_updates:
                 text = upd["message"]["text"]
                 chat_id = str(upd["message"]["chat"]["id"])
-                log("got message (chat:{}): {}".format(chat_id, text))
+                if verbose:
+                    log("Got message (chat:{}): {}".format(chat_id, text))
                 try:
                     handle_message(chat_id, text)
                 except Exception as e:
@@ -150,9 +154,8 @@ def bot_updater_thread():
 
 
 def handle_message(chat_id, message):
-    global parser_countdown
-    global parser_delay
-    global debug
+    global debug, verbose
+    global parser_countdown, parser_delay
 
     if message == "/help":
         log("Help")
@@ -165,7 +168,7 @@ def handle_message(chat_id, message):
         if len(parts) == 3:
             add_chat(chat_id, parts[1], parts[2])
             send_message(chat_id, "Start scanning #"+parts[1])
-            parser_countdown = 2
+            parser_countdown = 3
         else:
             send_message(chat_id, "Usage: /start <tag> <cian_url>")
 
@@ -226,7 +229,7 @@ def handle_message(chat_id, message):
         log("Scan")
 
     if message == "/restart":
-        log(u"Restart")
+        log("Restart")
         global restart
         restart += 1
         if restart>1:
@@ -235,7 +238,7 @@ def handle_message(chat_id, message):
             os.execl(python, python, * sys.argv)
             raise SystemExit
         else:
-            log(u"  skip restart")
+            log("  skip restart")
             send_message(chat_id, u"try again")
 
     if message.find("/delay") == 0: 
@@ -252,14 +255,15 @@ def handle_message(chat_id, message):
 
 
 def cian_parser_thread():
-    global parser_countdown
-    global parser_delay
+    global debug, verbose
+    global parser_countdown, parser_delay
+    log("Cian page parser thread started")
 
     while True:
         chats_copy = chats.copy()
 
         if len(chats_copy)==0:
-            log(u"sleep: {}s".format(parser_delay))
+            log("Sleep: {}s".format(parser_delay))
             parser_countdown = parser_delay
             while parser_countdown>0:
                 gevent.sleep(1)
@@ -272,32 +276,42 @@ def cian_parser_thread():
                 parser_countdown -= 1
 
             log("{{ parsing {} {}".format(chat_id, chat['url' if debug else 'tag']))
-            hata_refs, onpage_links_count = cian.parse(known_path, chat['url'])
-            if hata_refs is None: # fail
+            new_cian_refs, onpage_links_count = cian.parse(known_path, chat['url'])
+            if new_cian_refs is None: # fail
                 log("}}")
                 continue
-            log("}} parsed {}, onpage_links_count {}".format(len(hata_refs), onpage_links_count))
+            log("}} parsed {}, onpage_links_count {}".format(len(new_cian_refs), onpage_links_count))
 
             if debug:
-                print(hata_refs)
-            if len(hata_refs) > 0:
-                for ref in hata_refs:
+                print(new_cian_refs)
+            if len(new_cian_refs) > 0:
+                for ref in new_cian_refs:
                     send_message(chat_id, ref)
-                    log("  parser: "+ref)
+                    if verbose:
+                        log(ref)
+                    gevent.sleep(1)
 
             elif debug:
-                msg = "no new hata-refs #"+chats[chat_id]['tag']
+                msg = "no new cian refs #"+chat['tag']
                 send_message(chat_id, msg)
-                log("  parser: "+msg)
+                if verbose:
+                    log(msg)
 
-            if onpage_links_count<1:
-                msg = "Warning!\nGot no links on the page #{}\nCheck CIAN captcha!".format(
-                                chats[chat_id]['tag'])
+            if onpage_links_count<2:
+                msg = "Warning!\nGot no links on the page #{}\nCheck CIAN captcha!".format(chat['tag'])
                 send_message(chat_id, msg)
-                log(u"  parser: "+msg)
+                log(msg)
 
 
 def main():
+    global debug, verbose
+    
+    verbose = bool(os.getenv('VERBOSE', verbose))
+    log("VERBOSE = {}".format(verbose))
+    
+    debug = bool(os.getenv('DEBUG', debug))
+    log("DEBUG = {}".format(debug))
+
     gevent.joinall([
         gevent.spawn(bot_updater_thread),
         gevent.spawn(cian_parser_thread),
