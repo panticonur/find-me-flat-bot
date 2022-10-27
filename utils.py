@@ -6,7 +6,9 @@ import os.path
 def log(message):
     print("[{}] {}".format(str(datetime.now()), message))
 
+
 def load_json(fname, default_value):
+    log("load_json({})".format(fname))
     if not os.path.isfile(fname):
         return default_value
     with open(fname, "r") as fp:
