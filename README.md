@@ -1,6 +1,18 @@
 find-me-flat-bot
 ================
 
+WinServer
+---------
+
+1. ubuntu on windows
+https://itisgood.ru/2019/02/26/kak-zapustit-linux-na-windows-server-2019-s-wsl/
+
+2. ssh
+https://winitpro.ru/index.php/2019/10/17/windows-openssh-server/
+https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_keymanagement
+
+
+
 Ботик для telegram, который будет мониторить cian и скидывать вам новые объявления в Telegram.
 
 Как настроить:
