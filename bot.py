@@ -1,25 +1,9 @@
-# pnt_flat_bot PntFlatBot
-
 from time import sleep
 import gevent
 import json
 import os
 import sys
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    def load_dotenv(path='.env'):
-        if not os.path.exists(path):
-            return False
-        with open(path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
-                    continue
-                if '=' in line:
-                    key, val = line.split('=', 1)
-                    os.environ.setdefault(key.strip(), val.strip())
-        return True
+from dotenv import load_dotenv
 import urllib.request
 import urllib.parse
 from gevent.monkey import patch_all
@@ -28,13 +12,8 @@ from utils import log, save_json, load_json
 
 load_dotenv()
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
-REQUEST_UPDATES_TIMEOUT = 45
-PARSER_DELAY = 600
-
-https_handler = urllib.request.HTTPSHandler()
-opener = urllib.request.build_opener(https_handler)
-patch_all()
-
+REQUEST_UPDATES_TIMEOUT = os.getenv("REQUEST_UPDATES_TIMEOUT", 45)
+PARSER_DELAY = os.getenv("REQUEST_UPDATES_TIMEOUT", 600)
 data_dir = os.path.join(os.path.dirname(__file__), "data")
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -42,30 +21,28 @@ known_path = os.path.join(data_dir, "known.json")
 page_path = os.path.join(data_dir, "page.html")
 chats_path = os.path.join(data_dir, "chats.json")
 chats = load_json(chats_path, {})
-print(chats)
-
 parser_delay = PARSER_DELAY
 parser_countdown = PARSER_DELAY
-
-verbose = bool(os.getenv('VERBOSE', verbose))
-log("VERBOSE = {}".format(verbose))
-    
-debug = bool(os.getenv('DEBUG', debug))
-log("DEBUG = {}".format(debug))
-
-debug = False
-verbose = False
 restart = 0
-
-cian.debug = debug
+verbose = bool(os.getenv('VERBOSE', 0))
+debug = bool(os.getenv('DEBUG', 0))
 cian.verbose = verbose
+cian.debug = debug
 cian.page_path = page_path
-
+log("VERBOSE = {}".format(verbose))
+log("DEBUG = {}".format(debug))
+log("TG_BOT_TOKEN = {}".format(TG_BOT_TOKEN))
+log("PARSER_DELAY = {}".format(PARSER_DELAY))
+log("REQUEST_UPDATES_TIMEOUT = {}".format(REQUEST_UPDATES_TIMEOUT))
+print(chats)
+https_handler = urllib.request.HTTPSHandler()
+opener = urllib.request.build_opener(https_handler)
+patch_all()
 
 def load_telegram_method(method, params):
     global debug, verbose
     params_str = urllib.parse.urlencode(params)
-    url = "https://api.telegram.org/bot{}/{}?{}".format(BOT_TOKEN,
+    url = "https://api.telegram.org/bot{}/{}?{}".format(TG_BOT_TOKEN,
                                                         method,
                                                         params_str)
     if debug:
