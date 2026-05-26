@@ -1,40 +1,30 @@
+# pnt_flat_bot PntFlatBot
+
 from time import sleep
 import gevent
 import json
 import os
 import sys
-import socket
-import socks
 from gevent.monkey import patch_all
 import cian
 from utils import log, save_json, load_json
 import urllib.request
 import urllib.parse
 
-
 BOT_TOKEN='5712465853:AAEh9ewqzcrLwFw8PA90MAKKowR_TtpTqGk'
-# pnt_flat_bot PntFlatBot
-
-PROXY_HOST = 'pryatki.dev'
-PROXY_PORT = 31337
-PROXY_USER = 'vasya'
-PROXY_PSWRD = '123123123'
 REQUEST_UPDATES_TIMEOUT = 45
 PARSER_DELAY = 600
 
-
-#proxy_handler = SocksiPyHandler(socks.SOCKS5, PROXY_HOST, PROXY_PORT, True, PROXY_USER, PROXY_PSWRD)
 https_handler = urllib.request.HTTPSHandler()
 opener = urllib.request.build_opener(https_handler)
 patch_all()
-messages_queue = []
+
 data_dir = os.path.join(os.path.dirname(__file__), "data")
-CHATS_FILE = "chats.json"
-KNOWN_FILE = "known.json"
-PAGE_FILE = "page.html"
-chats_path = os.path.join(data_dir, CHATS_FILE)
-known_path = os.path.join(data_dir, KNOWN_FILE)
-page_path = os.path.join(data_dir, PAGE_FILE)
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+known_path = os.path.join(data_dir, "known.json")
+page_path = os.path.join(data_dir, "page.html")
+chats_path = os.path.join(data_dir, "chats.json")
 chats = load_json(chats_path, {})
 parser_delay = PARSER_DELAY
 parser_countdown = PARSER_DELAY
@@ -46,32 +36,6 @@ restart = 0
 cian.debug = debug
 cian.verbose = verbose
 cian.page_path = page_path
-
-
-if not os.path.exists(data_dir):
-    os.makedirs(data_dir)
-
-
-def add_chat(chat_id, tag, url):
-    chats[chat_id] = {'url': url, 'tag': tag}
-    save_json(chats_path, chats)
-    log("    add chat {}: #{} {}".format(chat_id, tag, url))
-
-
-def set_delay(chat_id, time): # NOT WORKING
-    time = int(time)
-    chats[chat_id]['delay'] = time
-    save_json(chats_path, chats)
-    log("    set chat delay {}: {}".format(chat_id, time))
-
-
-def remove_chat(chat_id):
-    if chat_id in chats:
-        tag = chats[chat_id]['tag']
-        del chats[chat_id]
-        save_json(chats_path, chats)
-        log("    remove chat {}: #{}".format(chat_id, tag))
-        return tag
 
 
 def load_telegram_method(method, params):
@@ -246,6 +210,28 @@ def handle_message(chat_id, message):
             send_message(chat_id, "Scanning delay is set to {}s".format(parts[1]))
         else:
             send_message(chat_id, u"Usage: /delay <seconds>")
+
+
+def add_chat(chat_id, tag, url):
+    chats[chat_id] = {'url': url, 'tag': tag}
+    save_json(chats_path, chats)
+    log("    add chat {}: #{} {}".format(chat_id, tag, url))
+
+
+def set_delay(chat_id, time): # NOT WORKING
+    time = int(time)
+    chats[chat_id]['delay'] = time
+    save_json(chats_path, chats)
+    log("    set chat delay {}: {}".format(chat_id, time))
+
+
+def remove_chat(chat_id):
+    if chat_id in chats:
+        tag = chats[chat_id]['tag']
+        del chats[chat_id]
+        save_json(chats_path, chats)
+        log("    remove chat {}: #{}".format(chat_id, tag))
+        return tag
 
 
 def cian_parser_thread():
