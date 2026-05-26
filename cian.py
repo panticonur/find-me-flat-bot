@@ -1,4 +1,4 @@
-import urllib
+import urllib.request
 from bs4 import BeautifulSoup
 from utils import log, save_json, load_json
 import os
@@ -28,13 +28,13 @@ def get_page(url):
 
 
 def get_local_page():
-    with open(page_path, "r") as f:
+    with open(page_path, "rb") as f:
         return f.read()
 
 
 def save_to_local_page(data):
-    with open(page_path, "w") as f:
-        return f.write(str(data))
+    with open(page_path, "wb") as f:
+        return f.write(data)
 
 
 def has_class(el, str):

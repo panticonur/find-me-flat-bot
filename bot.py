@@ -8,8 +8,8 @@ import socks
 from gevent.monkey import patch_all
 import cian
 from utils import log, save_json, load_json
-import urllib
-from sockshandler import SocksiPyHandler
+import urllib.request
+import urllib.parse
 
 
 BOT_TOKEN='5712465853:AAEh9ewqzcrLwFw8PA90MAKKowR_TtpTqGk'
@@ -70,28 +70,23 @@ def remove_chat(chat_id):
         tag = chats[chat_id]['tag']
         del chats[chat_id]
         save_json(chats_path, chats)
-        log("    remove chat {}: #{}".format(str(chat_id, tag)))
+        log("    remove chat {}: #{}".format(chat_id, tag))
         return tag
 
 
 def load_telegram_method(method, params):
     global debug, verbose
-    unicode_params = {}
-    for k, v in params.items():
-        val = v.encode("utf8") if isinstance(v, str) else v
-        unicode_params[k] = val
-
-    params_str = urllib.parse.urlencode(unicode_params)
-    url = u"https://api.telegram.org/bot{}/{}?{}".format(BOT_TOKEN,
-                                                         method,
-                                                         params_str)
+    params_str = urllib.parse.urlencode(params)
+    url = "https://api.telegram.org/bot{}/{}?{}".format(BOT_TOKEN,
+                                                        method,
+                                                        params_str)
     if debug:
         print("  *( load telegram method: {}".format(method))
         print(url)
     readed = opener.open(url).read()
     if debug:
         print("  *) done {}".format(method))
-    jsn = json.loads(readed)#, encoding="utf-8")
+    jsn = json.loads(readed.decode("utf-8"))
     if debug:
         print("  *: readed")
         print(jsn)
