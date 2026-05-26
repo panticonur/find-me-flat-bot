@@ -5,13 +5,29 @@ import gevent
 import json
 import os
 import sys
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(path='.env'):
+        if not os.path.exists(path):
+            return False
+        with open(path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' in line:
+                    key, val = line.split('=', 1)
+                    os.environ.setdefault(key.strip(), val.strip())
+        return True
+import urllib.request
+import urllib.parse
 from gevent.monkey import patch_all
 import cian
 from utils import log, save_json, load_json
-import urllib.request
-import urllib.parse
 
-BOT_TOKEN='5712465853:AAEh9ewqzcrLwFw8PA90MAKKowR_TtpTqGk'
+load_dotenv()
+TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 REQUEST_UPDATES_TIMEOUT = 45
 PARSER_DELAY = 600
 
@@ -26,8 +42,16 @@ known_path = os.path.join(data_dir, "known.json")
 page_path = os.path.join(data_dir, "page.html")
 chats_path = os.path.join(data_dir, "chats.json")
 chats = load_json(chats_path, {})
+print(chats)
+
 parser_delay = PARSER_DELAY
 parser_countdown = PARSER_DELAY
+
+verbose = bool(os.getenv('VERBOSE', verbose))
+log("VERBOSE = {}".format(verbose))
+    
+debug = bool(os.getenv('DEBUG', debug))
+log("DEBUG = {}".format(debug))
 
 debug = False
 verbose = False
@@ -284,16 +308,6 @@ def cian_parser_thread():
 
 
 def main():
-    global debug, verbose
-    
-    verbose = bool(os.getenv('VERBOSE', verbose))
-    log("VERBOSE = {}".format(verbose))
-    
-    debug = bool(os.getenv('DEBUG', debug))
-    log("DEBUG = {}".format(debug))
-
-    print(chats)
-
     gevent.joinall([
         gevent.spawn(cian_parser_thread),
         gevent.spawn(bot_updater_thread),

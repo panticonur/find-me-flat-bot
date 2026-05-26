@@ -23,10 +23,23 @@ https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_
 ```bash
 git clone git@github.com:persidskiy/find-me-flat-bot.git
 cd find-me-flat-bot
+
+# сделать virtenv 
+python -m venv env
+# активировать
+source env/bin/activate
+# поставить зависимости проекта
+pip install -r requirements.txt
+pip install --prefer-binary -r requirements.txt
+# выйти
+deactivate
+
+
 docker build . -t "find-me-flat-bot"
 
 # в обычном режиме:
 docker run -t -e TG_BOT_TOKEN="<token>" find-me-flat-bot:latest
+docker run -t -e DEBUG=1 -e VERBOSE=1 find-me-flat-bot:latest
 # в режиме демона
 docker run -d -e TG_BOT_TOKEN="<token>" find-me-flat-bot:latest
 ```

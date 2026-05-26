@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 env/
+.env
 data/
 *.pyc
 page.html
