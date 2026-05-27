@@ -103,6 +103,9 @@ def parse(known_path, url):
     try:
         # page_data = get_page(url)
         page_data = browser.open(url)
+        if page_data is None:
+            log("Failed to get page data")
+            raise
     except Exception as e:
         log("EXCEPTION get_page:")
         print(e)

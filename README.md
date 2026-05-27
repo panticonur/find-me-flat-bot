@@ -28,10 +28,11 @@ git clone git@github.com:persidskiy/find-me-flat-bot.git
 cd find-me-flat-bot
 
 docker build . -t "find-me-flat-bot"
+docker build --no-cache --progress=plain . -t "find-me-flat-bot"
 
 # в обычном режиме:
 docker run -t -e TG_BOT_TOKEN="<token>" find-me-flat-bot:latest
-docker run -t -e DEBUG=1 -e VERBOSE=1 find-me-flat-bot:latest
+docker run -t -e TG_BOT_TOKEN="<token>" -e DEBUG=1 -e VERBOSE=1 find-me-flat-bot:latest
 # в режиме демона
 docker run -d -e TG_BOT_TOKEN="<token>" find-me-flat-bot:latest
 ```
