@@ -27,7 +27,7 @@ if not os.path.exists(data_dir):
 known_path = os.path.join(data_dir, "known.json")
 page_path = os.path.join(data_dir, "page.html")
 chats_path = os.path.join(data_dir, "chats.json")
-chats = load_json(chats_path, {})
+chats = load_json(chats_path, [])
 url = ""
 parser_gap = int(PARSER_GAP)
 parser_countdown = int(PARSER_GAP)
@@ -114,57 +114,45 @@ def bot_updater_thread():
 
 
 def handle_message(chat_id, message):
-    global debug, verbose
+    global debug, verbose, url
     global parser_countdown, parser_gap
 
     if message == "/help":
         log("Help")
         send_message(chat_id,
-                     "/start\n/url <tag> <url>\n/stop\n/stat[us]\n/scan\ngap <seconds>")
+                     "/start\n/url <url>\n/stop\n/status\n/scan\ngap <seconds>")
 
     if message.find("/start") == 0:
-        log("Start")
-        add_chat(chat_id, "tag", "url")
+        log("Start "+chat_id)
+        add_chat(chat_id)
         send_message(chat_id, "Start")
         parser_countdown = 3
 
     if message.find("/url") == 0:
-        log("Url")
+        
         parts = message.split(" ")
         if len(parts) == 2:
             url = parts[1]
+            log("Url "+url)
             for chat in chats:
-            send_message(chat_id, "Url\n"+url)
+                send_message(chat, "Url\n"+url)
             parser_countdown = 3
         else:
-            send_message(chat_id, "Usage: /start <tag> <cian_url>")
+            log("Url")
+            send_message(chat_id, "Set url: /url <cian_url>\nCurrent url:"+url)
 
     elif message == "/stop":
         log("Stop")
-        chat = chats.get(chat_id, False)
-        tag = remove_chat(chat_id)
-        send_message(chat_id, "Stop scanning #{}\n{}".format(tag, chat['url']))
+        remove_chat(chat_id)
+        send_message(chat_id, "Stop\n"+chat_id)
 
-    if message == "/stat":  # NOT WORKING
-        log("Stat")
-        chat = chats.get(chat_id, False)
-        msg = "chat not found!"
-        if chat:
-            msg = "#{}  delay: {} {}".format(
-                chat['tag'], parser_gap, parser_countdown)
-        log(msg)
-        send_message(chat_id, msg)
-
-    if message == "/status":  # NOT WORKING
+    if message == "/status":
         if debug:
             log("Status  {}".format(json.dumps(chats)))
         else:
             log("Status")
-        chat = chats.get(chat_id, False)
-        msg = "chat not found!\ndebug:"+str(debug)
-        if chat:
-            msg = "#{}  delay: {} {}  debug: {}\n{}".format(
-                chat['tag'], parser_gap, parser_countdown, debug, chat['url'])
+        msg = "{}\ngap: {} {}  debug: {}".format(
+            url, parser_gap, parser_countdown, debug)
         log(msg)
         send_message(chat_id, msg)
 
@@ -208,39 +196,29 @@ def handle_message(chat_id, message):
             log("  skip restart")
             send_message(chat_id, u"try again")
 
-    if message.find("/delay") == 0: 
-        log("Delay")
+    if message.find("/gap") == 0: 
+        log("Gap")
         parts = message.split(" ")
         if len(parts) == 2:
             parser_gap = int(parts[1])
             parser_countdown = parser_gap
-            log("  parser_delay set to {}".format(parser_gap))
-            #set_delay(chat_id, parts[1])  # NOT WORKING
-            send_message(chat_id, "Scanning delay is set to {}s".format(parts[1]))
+            log("  parser_gap set to {}".format(parser_gap))
+            send_message(chat_id, "Scanning gap is set to {}s".format(parser_gap))
         else:
-            send_message(chat_id, u"Usage: /delay <seconds>")
+            send_message(chat_id, u"Usage: /gap <seconds>")
 
 
-def add_chat(chat_id, tag, url):
-    chats[chat_id] = {'url': url, 'tag': tag}
+def add_chat(chat_id):
+    chats.append(chat_id)
     save_json(chats_path, chats)
     log("    add chat {}: #{} {}".format(chat_id, tag, url))
 
 
-def set_delay(chat_id, time): # NOT WORKING
-    time = int(time)
-    chats[chat_id]['delay'] = time
-    save_json(chats_path, chats)
-    log("    set chat delay {}: {}".format(chat_id, time))
-
-
 def remove_chat(chat_id):
     if chat_id in chats:
-        tag = chats[chat_id]['tag']
-        del chats[chat_id]
+        chats.remove(chat_id)
         save_json(chats_path, chats)
-        log("    remove chat {}: #{}".format(chat_id, tag))
-        return tag
+        log("    remove chat {}: #{}".format(chat_id))
 
 
 def cian_parser_thread():
@@ -258,37 +236,41 @@ def cian_parser_thread():
                 gevent.sleep(1)
                 parser_countdown -= 1
 
-        for chat_id, chat in chats_copy.items():
-            parser_countdown = parser_gap
-            while parser_countdown>0:
-                gevent.sleep(1)
-                parser_countdown -= 1
+        # for chat in chats_copy:
+        parser_countdown = parser_gap
+        while parser_countdown>0:
+            gevent.sleep(1)
+            parser_countdown -= 1
 
-            log("{{ parsing {} {}".format(chat_id, chat['url' if debug else 'tag']))
-            new_cian_refs, onpage_links_count = cian.parse(known_path, chat['url'])
-            if new_cian_refs is None: # fail
-                log("}}")
-                continue
-            log("}} parsed {}, onpage_links_count {}".format(len(new_cian_refs), onpage_links_count))
+        log("{{ parsing {} "+url)
+        new_cian_refs, onpage_links_count = cian.parse(known_path, url)
+        if new_cian_refs is None:
+            log("}}")
+        else:
+            log("}} parsed {}, onpage_links_count {}".format(
+                len(new_cian_refs), onpage_links_count))
 
-            if debug:
-                print(new_cian_refs)
-            if len(new_cian_refs) > 0:
-                for ref in new_cian_refs:
-                    send_message(chat_id, ref)
-                    if verbose:
-                        log(ref)
-                    gevent.sleep(1)
-
-            elif debug:
-                msg = "no new cian refs #"+chat['tag']
-                send_message(chat_id, msg)
+        if debug:
+            print(new_cian_refs)
+        if new_cian_refs is not None and len(new_cian_refs)>0:
+            for ref in new_cian_refs:
+                for chat in chats_copy:
+                    send_message(chat, ref)
                 if verbose:
-                    log(msg)
+                    log(ref)
+                gevent.sleep(1)
 
-            if onpage_links_count<2:
-                msg = "Warning!\nGot no links on the page #{}\nCheck CIAN captcha!".format(chat['tag'])
-                send_message(chat_id, msg)
+        elif debug:
+            msg = "no new cian refs"
+            for chat in chats_copy:
+                send_message(chat, msg)
+            if verbose:
+                log(msg)
+
+            if onpage_links_count is None or onpage_links_count<2:
+                msg = "Warning!\nGot no links on the page!\nCheck CIAN captcha!"
+                for chat in chats_copy:
+                    send_message(chat, msg)
                 log(msg)
 
 
