@@ -10,8 +10,7 @@ RUN apt install -y chromium
 RUN apt install -y chromium-driver
 # RUN apt install -y chromium-chromedriver
 
-RUN apt install -y wget gnupg xvfb libxi6 \
-    unzip
+RUN apt install -y wget gnupg xvfb libxi6
 
 RUN apt clean && rm -rf /var/lib/apt/lists/*
 
