@@ -2,6 +2,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 from utils import log, save_json, load_json
 import os
+import browser
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 debug = True
@@ -32,8 +33,14 @@ def get_local_page():
         return f.read()
 
 
-def save_to_local_page(data):
-    with open(page_path, "wb") as f:
+def dump_page(data):
+    if isinstance(data, (bytes, bytearray)):
+        mode = "wb"
+        encoding = None
+    else:
+        mode = "w"
+        encoding = "utf-8"
+    with open(page_path, mode, encoding=encoding) as f:
         return f.write(data)
 
 
@@ -73,36 +80,41 @@ def get_link_href(el):
 
 
 def get_flat_refs(data):
-    global debug, verbose
     soup = BeautifulSoup(data, 'html.parser')
     links = soup.find_all('a')
-    if debug:
-        print("cian.get_flat_refs() total links "+str(len(links)))
     flat_links = filter(is_flat_link, links)
 
     flat_refs = map(get_link_href, flat_links)
     return set(filter(lambda h: h is not None, flat_refs)), len(links)
 
 
+def cut_flat_refs(refs):
+    cutted_refs = set()
+    for ref in refs:
+        parts = ref.split("/")
+        if len(parts) < 6:
+            continue
+        cutted_refs.add("/".join(parts[:6]))
+    return cutted_refs
+
+
 def parse(known_path, url):
     global debug, verbose
     try:
-        page_data = get_page(url)
-    except Exception as e: # urllib2.HTTPError, e:
+        # page_data = get_page(url)
+        page_data = browser.open(url)
+    except Exception as e:
         log("EXCEPTION get_page:")
-        print(e) #print "Unexpected error:", sys.exc_info()[0]
+        print(e)
         if debug:
             raise
         return None, None
-    if debug:
-        print("cian.parse() page_data:")
-        print(page_data)
-    save_to_local_page(page_data)
+    dump_page(page_data)
     #page_data = get_local_page()
     refs, links_count = get_flat_refs(page_data)
+    refs = cut_flat_refs(refs)
     if debug:
-        print("cian.parse() refs:")
-        print(refs)
+        print("flat refs on page:\n", refs)
     known_refs = get_known_refs(known_path)
     new_refs = refs - known_refs
     if verbose:

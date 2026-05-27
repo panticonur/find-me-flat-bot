@@ -1,4 +1,3 @@
-from time import sleep
 import gevent
 import json
 import os
@@ -9,8 +8,7 @@ import urllib.parse
 import cian
 from utils import log, save_json, load_json
 from gevent.monkey import patch_all
-# Apply gevent monkey patch before importing or initializing network state.
-patch_all()
+
 
 load_dotenv()
 debug = bool(os.getenv('DEBUG', 0))
@@ -41,8 +39,8 @@ cian.debug = debug
 cian.page_path = page_path
 print("chats: "+str(chats))
 https_handler = urllib.request.HTTPSHandler()
-opener = urllib.request.build_opener(https_handler)
-
+tg_opener = urllib.request.build_opener(https_handler)
+patch_all()
 
 def load_telegram_method(method, params):
     global debug, verbose
@@ -52,7 +50,7 @@ def load_telegram_method(method, params):
     if debug:
         print("  *( load telegram method: {}".format(method))
         print(url)
-    readed = opener.open(url).read()
+    readed = tg_opener.open(url).read()
     if debug:
         print("  *) done {}".format(method))
     jsn = json.loads(readed.decode("utf-8"))
@@ -86,9 +84,9 @@ def bot_updater_thread():
         try:
             updates_response = request_updates(offset)
             updates = updates_response.get("result", [])
-        except Exception as e: # urllib2.HTTPError, e:
+        except Exception as e: 
             log("EXCEPTION Bot updater:")
-            print(e) #print "Unexpected error:", sys.exc_info()[0]
+            print(e)
             if debug:
                 raise
             continue
@@ -180,6 +178,10 @@ def handle_message(chat_id, message):
             os.remove(page_path)
         except:
             log("error remove "+page_path)
+        try:
+            os.remove(url_path)
+        except:
+            log("error remove "+url_path)
         send_message(chat_id, "files removed")
 
     if message == "/debug":
@@ -253,17 +255,17 @@ def cian_parser_thread():
                     log(ref)
                 gevent.sleep(1)
 
+        elif onpage_links_count is None or onpage_links_count<5:
+            msg = "Warning!\nGot no links on the page!\nCheck CIAN captcha!"
+            for chat in chats_copy:
+                send_message(chat, msg)
+            log(msg)
+
         elif debug:
-            msg = "no new cian refs"
+            msg = "No new flats."
             for chat in chats_copy:
                 send_message(chat, msg)
             if verbose:
-                log(msg)
-
-            if onpage_links_count is None or onpage_links_count<5:
-                msg = "Warning!\nGot no links on the page!\nCheck CIAN captcha!"
-                for chat in chats_copy:
-                    send_message(chat, msg)
                 log(msg)
 
 
