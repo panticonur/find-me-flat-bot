@@ -19,8 +19,8 @@ ADD requirements.txt /requirements.txt
 RUN pip install --prefer-binary -r requirements.txt
 
 ADD . /
-
-# VOLUME [ "/data" ]
+# RUN rm -rf data/*
+VOLUME [ "/data" ]
 
 RUN echo "Xvfb :99 -screen 0 1920x1080x24 & export DISPLAY=:99 && python bot.py" > /entrypoint.sh
 CMD ["sh", "/entrypoint.sh"]
