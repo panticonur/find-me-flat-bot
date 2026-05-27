@@ -8,16 +8,9 @@ import urllib.request
 import urllib.parse
 import cian
 from utils import log, save_json, load_json
-import debugpy
-
-# Initialize debugger before patching
-# try:
-#     import debugpy
-#     debugpy.listen(("localhost", 5678), in_process_debug_adapter=True)
-# except:
-#     pass
-# from gevent.monkey import patch_all
-# patch_all()
+from gevent.monkey import patch_all
+# Apply gevent monkey patch before importing or initializing network state.
+patch_all()
 
 load_dotenv()
 debug = bool(os.getenv('DEBUG', 0))
@@ -44,7 +37,7 @@ restart = 0
 cian.verbose = verbose
 cian.debug = debug
 cian.page_path = page_path
-print(chats)
+print("chats: "+str(chats))
 https_handler = urllib.request.HTTPSHandler()
 opener = urllib.request.build_opener(https_handler)
 
@@ -132,8 +125,10 @@ def handle_message(chat_id, message):
 
     if message.find("/start") == 0:
         log("Start "+chat_id)
-        add_chat(chat_id)
-        send_message(chat_id, "Start")
+        chats.append(chat_id)
+        save_json(chats_path, chats)
+        log("    add chat "+chat_id)
+        send_message(chat_id, "Started")
         parser_countdown = 3
 
     if message.find("/url") == 0:
@@ -147,20 +142,24 @@ def handle_message(chat_id, message):
             parser_countdown = 3
         else:
             log("Url")
-            send_message(chat_id, "Set url: /url <cian_url>\nCurrent url:"+url)
+            send_message(chat_id, 
+                         "Set url: /url <cian_url>\nCurrent url: "+url)
 
     elif message == "/stop":
         log("Stop")
-        remove_chat(chat_id)
-        send_message(chat_id, "Stop\n"+chat_id)
+        if chat_id in chats:
+            chats.remove(chat_id)
+            save_json(chats_path, chats)
+            log("    remove chat "+chat_id)
+        send_message(chat_id, "Stopped")
 
     if message == "/status":
         if debug:
             log("Status  {}".format(json.dumps(chats)))
         else:
             log("Status")
-        msg = "{}\ngap: {} {}  debug: {}".format(
-            url, parser_gap, parser_countdown, debug)
+        msg = "gap: {} {}\ndebug: {}".format(
+            parser_gap, parser_countdown, debug)
         log(msg)
         send_message(chat_id, msg)
 
@@ -216,19 +215,6 @@ def handle_message(chat_id, message):
             send_message(chat_id, u"Usage: /gap <seconds>")
 
 
-def add_chat(chat_id):
-    chats.append(chat_id)
-    save_json(chats_path, chats)
-    log("    add chat "+chat_id)
-
-
-def remove_chat(chat_id):
-    if chat_id in chats:
-        chats.remove(chat_id)
-        save_json(chats_path, chats)
-        log("    remove chat {}: #{}".format(chat_id))
-
-
 def cian_parser_thread():
     global debug, verbose
     global parser_countdown, parser_gap
@@ -237,20 +223,16 @@ def cian_parser_thread():
     while True:
         chats_copy = chats.copy()
 
-        if len(chats_copy)==0:
-            log("Sleep: {}s".format(parser_gap))
-            parser_countdown = parser_gap
-            while parser_countdown>0:
-                gevent.sleep(1)
-                parser_countdown -= 1
-
-        # for chat in chats_copy:
+        log("Sleep: {}s".format(parser_gap))
         parser_countdown = parser_gap
         while parser_countdown>0:
             gevent.sleep(1)
             parser_countdown -= 1
 
-        log("{{ parsing {} "+url)
+        if len(chats_copy)==0:
+            continue
+
+        log("{{ parsing: \"{}\"".format(url))
         new_cian_refs, onpage_links_count = cian.parse(known_path, url)
         if new_cian_refs is None:
             log("}}")
