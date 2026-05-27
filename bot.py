@@ -11,9 +11,16 @@ import cian
 from utils import log, save_json, load_json
 
 load_dotenv()
+debug = bool(os.getenv('DEBUG', 0))
+verbose = bool(os.getenv('VERBOSE', 0))
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
-REQUEST_UPDATES_TIMEOUT = os.getenv("REQUEST_UPDATES_TIMEOUT", 45)
-PARSER_DELAY = os.getenv("REQUEST_UPDATES_TIMEOUT", 600)
+REQUEST_UPDATES_INTERVAL = os.getenv("REQUEST_UPDATES_INTERVAL", 45)
+PARSER_GAP = os.getenv("REQUEST_UPDATES_INTERVAL", 600)
+log("DEBUG = {}".format(debug))
+log("VERBOSE = {}".format(verbose))
+log("TG_BOT_TOKEN = {}".format(TG_BOT_TOKEN))
+log("REQUEST_UPDATES_INTERVAL = {}".format(REQUEST_UPDATES_INTERVAL))
+log("PARSER_GAP = {}".format(PARSER_GAP))
 data_dir = os.path.join(os.path.dirname(__file__), "data")
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -21,30 +28,24 @@ known_path = os.path.join(data_dir, "known.json")
 page_path = os.path.join(data_dir, "page.html")
 chats_path = os.path.join(data_dir, "chats.json")
 chats = load_json(chats_path, {})
-parser_delay = PARSER_DELAY
-parser_countdown = PARSER_DELAY
+url = ""
+parser_gap = int(PARSER_GAP)
+parser_countdown = int(PARSER_GAP)
 restart = 0
-verbose = bool(os.getenv('VERBOSE', 0))
-debug = bool(os.getenv('DEBUG', 0))
 cian.verbose = verbose
 cian.debug = debug
 cian.page_path = page_path
-log("VERBOSE = {}".format(verbose))
-log("DEBUG = {}".format(debug))
-log("TG_BOT_TOKEN = {}".format(TG_BOT_TOKEN))
-log("PARSER_DELAY = {}".format(PARSER_DELAY))
-log("REQUEST_UPDATES_TIMEOUT = {}".format(REQUEST_UPDATES_TIMEOUT))
 print(chats)
 https_handler = urllib.request.HTTPSHandler()
 opener = urllib.request.build_opener(https_handler)
 patch_all()
 
+
 def load_telegram_method(method, params):
     global debug, verbose
     params_str = urllib.parse.urlencode(params)
     url = "https://api.telegram.org/bot{}/{}?{}".format(TG_BOT_TOKEN,
-                                                        method,
-                                                        params_str)
+                                                        method, params_str)
     if debug:
         print("  *( load telegram method: {}".format(method))
         print(url)
@@ -60,7 +61,7 @@ def load_telegram_method(method, params):
 
 def request_updates(offset):
     params = {u"offset": offset,
-              u"timeout": REQUEST_UPDATES_TIMEOUT}
+              u"timeout": REQUEST_UPDATES_INTERVAL}
     return load_telegram_method("getUpdates", params)
 
 
@@ -114,19 +115,26 @@ def bot_updater_thread():
 
 def handle_message(chat_id, message):
     global debug, verbose
-    global parser_countdown, parser_delay
+    global parser_countdown, parser_gap
 
     if message == "/help":
         log("Help")
         send_message(chat_id,
-                     "/start <tag> <url>\n/stop\n/stat[us]\n/scan")
+                     "/start\n/url <tag> <url>\n/stop\n/stat[us]\n/scan\ngap <seconds>")
 
     if message.find("/start") == 0:
         log("Start")
+        add_chat(chat_id, "tag", "url")
+        send_message(chat_id, "Start")
+        parser_countdown = 3
+
+    if message.find("/url") == 0:
+        log("Url")
         parts = message.split(" ")
-        if len(parts) == 3:
-            add_chat(chat_id, parts[1], parts[2])
-            send_message(chat_id, "Start scanning #"+parts[1])
+        if len(parts) == 2:
+            url = parts[1]
+            for chat in chats:
+            send_message(chat_id, "Url\n"+url)
             parser_countdown = 3
         else:
             send_message(chat_id, "Usage: /start <tag> <cian_url>")
@@ -143,7 +151,7 @@ def handle_message(chat_id, message):
         msg = "chat not found!"
         if chat:
             msg = "#{}  delay: {} {}".format(
-                chat['tag'], parser_delay, parser_countdown)
+                chat['tag'], parser_gap, parser_countdown)
         log(msg)
         send_message(chat_id, msg)
 
@@ -156,7 +164,7 @@ def handle_message(chat_id, message):
         msg = "chat not found!\ndebug:"+str(debug)
         if chat:
             msg = "#{}  delay: {} {}  debug: {}\n{}".format(
-                chat['tag'], parser_delay, parser_countdown, debug, chat['url'])
+                chat['tag'], parser_gap, parser_countdown, debug, chat['url'])
         log(msg)
         send_message(chat_id, msg)
 
@@ -204,9 +212,9 @@ def handle_message(chat_id, message):
         log("Delay")
         parts = message.split(" ")
         if len(parts) == 2:
-            parser_delay = int(parts[1])
-            parser_countdown = parser_delay
-            log("  parser_delay set to {}".format(parser_delay))
+            parser_gap = int(parts[1])
+            parser_countdown = parser_gap
+            log("  parser_delay set to {}".format(parser_gap))
             #set_delay(chat_id, parts[1])  # NOT WORKING
             send_message(chat_id, "Scanning delay is set to {}s".format(parts[1]))
         else:
@@ -237,21 +245,21 @@ def remove_chat(chat_id):
 
 def cian_parser_thread():
     global debug, verbose
-    global parser_countdown, parser_delay
+    global parser_countdown, parser_gap
     log("Cian page parser thread started")
 
     while True:
         chats_copy = chats.copy()
 
         if len(chats_copy)==0:
-            log("Sleep: {}s".format(parser_delay))
-            parser_countdown = parser_delay
+            log("Sleep: {}s".format(parser_gap))
+            parser_countdown = parser_gap
             while parser_countdown>0:
                 gevent.sleep(1)
                 parser_countdown -= 1
 
         for chat_id, chat in chats_copy.items():
-            parser_countdown = parser_delay
+            parser_countdown = parser_gap
             while parser_countdown>0:
                 gevent.sleep(1)
                 parser_countdown -= 1
