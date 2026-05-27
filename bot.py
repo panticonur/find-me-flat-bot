@@ -6,9 +6,18 @@ import sys
 from dotenv import load_dotenv
 import urllib.request
 import urllib.parse
-from gevent.monkey import patch_all
 import cian
 from utils import log, save_json, load_json
+import debugpy
+
+# Initialize debugger before patching
+# try:
+#     import debugpy
+#     debugpy.listen(("localhost", 5678), in_process_debug_adapter=True)
+# except:
+#     pass
+# from gevent.monkey import patch_all
+# patch_all()
 
 load_dotenv()
 debug = bool(os.getenv('DEBUG', 0))
@@ -38,7 +47,6 @@ cian.page_path = page_path
 print(chats)
 https_handler = urllib.request.HTTPSHandler()
 opener = urllib.request.build_opener(https_handler)
-patch_all()
 
 
 def load_telegram_method(method, params):
@@ -211,7 +219,7 @@ def handle_message(chat_id, message):
 def add_chat(chat_id):
     chats.append(chat_id)
     save_json(chats_path, chats)
-    log("    add chat {}: #{} {}".format(chat_id, tag, url))
+    log("    add chat "+chat_id)
 
 
 def remove_chat(chat_id):
