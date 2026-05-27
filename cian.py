@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from utils import log, save_json, load_json
 import os
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 debug = True
 verbose = True
 page_path = ""
@@ -82,7 +82,6 @@ def get_flat_refs(data):
 
     flat_refs = map(get_link_href, flat_links)
     return set(filter(lambda h: h is not None, flat_refs)), len(links)
-
 
 
 def parse(known_path, url):

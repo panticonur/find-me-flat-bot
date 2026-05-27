@@ -30,7 +30,9 @@ known_path = os.path.join(data_dir, "known.json")
 page_path = os.path.join(data_dir, "page.html")
 chats_path = os.path.join(data_dir, "chats.json")
 chats = load_json(chats_path, [])
-url = ""
+url_path = os.path.join(data_dir, "url.json")
+url = load_json(url_path, "")
+print("url: "+url)
 parser_gap = int(PARSER_GAP)
 parser_countdown = int(PARSER_GAP)
 restart = 0
@@ -136,6 +138,7 @@ def handle_message(chat_id, message):
         parts = message.split(" ")
         if len(parts) == 2:
             url = parts[1]
+            save_json(url_path, url)
             log("Url "+url)
             for chat in chats:
                 send_message(chat, "Url\n"+url)
@@ -158,8 +161,8 @@ def handle_message(chat_id, message):
             log("Status  {}".format(json.dumps(chats)))
         else:
             log("Status")
-        msg = "gap: {} {}\ndebug: {}".format(
-            parser_gap, parser_countdown, debug)
+        msg = "gap: {}/{}\ndebug: {}".format(
+            parser_countdown, parser_gap, debug)
         log(msg)
         send_message(chat_id, msg)
 
@@ -257,7 +260,7 @@ def cian_parser_thread():
             if verbose:
                 log(msg)
 
-            if onpage_links_count is None or onpage_links_count<2:
+            if onpage_links_count is None or onpage_links_count<5:
                 msg = "Warning!\nGot no links on the page!\nCheck CIAN captcha!"
                 for chat in chats_copy:
                     send_message(chat, msg)
