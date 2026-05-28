@@ -2,6 +2,7 @@
 .vscode/
 env/
 .env
+run.sh
 data/
 *.pyc
 page.html
