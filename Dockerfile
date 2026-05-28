@@ -1,25 +1,23 @@
-# FROM --platform=linux/amd64 python:3.9
-FROM python:3.9
+FROM --platform=linux/amd64 python:3.9-slim
 
-RUN apt update
-RUN apt install -y chromium
-# RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-# RUN apt-get install -y ./google-chrome-stable_current_amd64.deb
-# RUN rm google-chrome-stable_current_amd64.deb
+WORKDIR /app
 
-RUN apt install -y chromium-driver
-# RUN apt install -y chromium-chromedriver
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    xvfb \
+    libxi6 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt install -y wget gnupg xvfb libxi6
+COPY requirements.txt .
+RUN pip install --prefer-binary --no-cache-dir -r requirements.txt
 
-RUN apt clean && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN rm -rf data && mkdir data
 
-ADD requirements.txt /requirements.txt
-RUN pip install --prefer-binary -r requirements.txt
+VOLUME ["/app/data"]
 
-ADD . /
-# RUN rm -rf data/*
-VOLUME [ "/data" ]
+RUN printf '#!/bin/sh\nexec Xvfb :99 -screen 0 1920x1080x24 & export DISPLAY=:99 && exec python bot.py\n' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
-RUN echo "Xvfb :99 -screen 0 1920x1080x24 & export DISPLAY=:99 && python bot.py" > /entrypoint.sh
-CMD ["sh", "/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]

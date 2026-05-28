@@ -1,0 +1,13 @@
+.git
+.gitignore
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+data
+.env
+env
+.DS_Store
+LICENSE
+.pytest_cache

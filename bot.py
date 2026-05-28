@@ -121,7 +121,13 @@ def handle_message(chat_id, message):
     if message == "/help":
         log("Help")
         send_message(chat_id,
-                     "/start\n/url <url>\n/stop\n/status\n/scan\ngap <seconds>")
+                     "/start\n"+
+                     "/url <http://cian.ru/...>\n"+
+                     "/stop\n"+
+                     "/scan\n"+
+                     "gap <seconds>\n"+
+                     "/reset\n"+
+                     "/status")
 
     if message.find("/start") == 0:
         log("Start "+chat_id)
@@ -154,6 +160,21 @@ def handle_message(chat_id, message):
             log("    remove chat "+chat_id)
         send_message(chat_id, "Stopped")
 
+    if message == "/scan":
+        parser_countdown = 1
+        log("Scan")
+
+    if message.find("/gap") == 0: 
+        log("Gap")
+        parts = message.split(" ")
+        if len(parts) == 2:
+            parser_gap = int(parts[1])
+            parser_countdown = parser_gap
+            log("  parser_gap set to {}".format(parser_gap))
+            send_message(chat_id, "Scanning gap is set to {}s".format(parser_gap))
+        else:
+            send_message(chat_id, u"Usage: /gap <seconds>")
+
     if message == "/status":
         if debug:
             log("Status  {}".format(json.dumps(chats)))
@@ -163,6 +184,14 @@ def handle_message(chat_id, message):
             parser_countdown, parser_gap, debug)
         log(msg)
         send_message(chat_id, msg)
+
+    if message == "/reset":
+        log("Reset")
+        try:
+            os.remove(known_path)
+        except:
+            log("error remove "+known_path)
+        send_message(chat_id, "Reset known flats.")
 
     if message == "/clear":
         log("Clear")
@@ -191,10 +220,6 @@ def handle_message(chat_id, message):
         log(msg)
         send_message(chat_id, msg)
 
-    if message == "/scan":
-        parser_countdown = 1
-        log("Scan")
-
     if message == "/restart":
         log("Restart")
         global restart
@@ -207,17 +232,6 @@ def handle_message(chat_id, message):
         else:
             log("  skip restart")
             send_message(chat_id, u"try again")
-
-    if message.find("/gap") == 0: 
-        log("Gap")
-        parts = message.split(" ")
-        if len(parts) == 2:
-            parser_gap = int(parts[1])
-            parser_countdown = parser_gap
-            log("  parser_gap set to {}".format(parser_gap))
-            send_message(chat_id, "Scanning gap is set to {}s".format(parser_gap))
-        else:
-            send_message(chat_id, u"Usage: /gap <seconds>")
 
 
 def cian_parser_thread():
