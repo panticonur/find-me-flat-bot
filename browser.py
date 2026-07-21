@@ -6,14 +6,19 @@ from selenium.common.exceptions import WebDriverException
 import utils
 from pyvirtualdisplay.display import Display
 
-
 def open(page_name):
-    driver = None
     display = None
     try:
         display = Display(visible=False, size=(1920, 1080))
         display.start()
+    except Exception as e:
+        utils.log(f"pyvirtualdisplay failed: {e}")
+    finally:
+        if display is not None:
+            display.stop()
 
+    driver = None
+    try:
         options = webdriver.ChromeOptions()
         # options.add_argument("--headless")
         options.add_argument('--no-sandbox')
@@ -30,8 +35,6 @@ def open(page_name):
     finally:
         if driver is not None:
             driver.quit()
-        if display is not None:
-            display.stop()
 
 
 def open_page(driver, page_name):

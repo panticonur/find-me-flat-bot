@@ -131,7 +131,8 @@ def handle_message(chat_id, message):
 
     if message.find("/start") == 0:
         log("Start "+chat_id)
-        chats.append(chat_id)
+        if chat_id not in chats:
+            chats.append(chat_id)
         save_json(chats_path, chats)
         log("    add chat "+chat_id)
         send_message(chat_id, "Started")
