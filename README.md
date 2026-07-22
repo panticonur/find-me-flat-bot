@@ -53,16 +53,19 @@ cd find-me-flat-bot
 
 # сделать virtenv 
 python -m venv env
+
 # активировать
 source env/bin/activate
-# или
+# или для windows
 source env/Scripts/activate
+
 # поставить зависимости проекта
 pip install -r requirements.txt
-# или для винды
+# или для windows
 pip install --prefer-binary -r requirements.txt
 
 python bot.py
+
 # выйти
 deactivate
 ```
