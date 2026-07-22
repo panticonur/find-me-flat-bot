@@ -107,7 +107,7 @@ def parse(known_path, url):
             log("Failed to get page data")
             raise
     except Exception as e:
-        log("EXCEPTION get_page:")
+        log("EXCEPTION browser.open:")
         print(e)
         if debug:
             raise
@@ -117,14 +117,14 @@ def parse(known_path, url):
     refs, links_count = get_flat_refs(page_data)
     refs = cut_flat_refs(refs)
     if debug:
-        print("flat refs on page:\n", refs)
+        print("pages refs {}:\n{}", len(refs), refs)
     known_refs = get_known_refs(known_path)
     new_refs = refs - known_refs
     if verbose:
-        log("  {} cian refs(new: {}, known: {})  links: {}".format(len(refs),
-                                                                   len(new_refs),
-                                                                   len(known_refs),
-                                                                   links_count))
+        log("all refs {}, new refs{}, known refs {}, links: {}".format(len(refs),
+                                                                len(new_refs),
+                                                                len(known_refs),
+                                                                links_count))
     if len(new_refs) > 0:
         new_known_refs = known_refs.union(new_refs)
         save_known_refs(known_path, new_known_refs)

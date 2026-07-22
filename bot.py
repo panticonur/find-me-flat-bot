@@ -122,12 +122,14 @@ def handle_message(chat_id, message):
         log("Help")
         send_message(chat_id,
                      "/start\n"+
-                     "/url <http://cian.ru/...>\n"+
                      "/stop\n"+
+                     "/url <http://cian.ru/...>\n"+
                      "/scan\n"+
+                     "/status\n"+
+                     "/verbose\n"+
                      "gap <seconds>\n"+
                      "/reset\n"+
-                     "/status")
+                     "/debug")
 
     if message.find("/start") == 0:
         log("Start "+chat_id)
@@ -181,8 +183,8 @@ def handle_message(chat_id, message):
             log("Status  {}".format(json.dumps(chats)))
         else:
             log("Status")
-        msg = "gap: {}/{}\ndebug: {}".format(
-            parser_countdown, parser_gap, debug)
+        msg = "started: {}\ngap: {}/{}\nverbose: {}\ndebug: {}\n".format(
+            chat_id in chats, parser_countdown, parser_gap, verbose, debug)
         log(msg)
         send_message(chat_id, msg)
 
@@ -221,6 +223,13 @@ def handle_message(chat_id, message):
         log(msg)
         send_message(chat_id, msg)
 
+    if message == "/verbose":
+        verbose = not verbose
+        cian.verbose = not cian.verbose
+        msg = "Verbose " + ("enabled" if verbose else "disabled")
+        log(msg)
+        send_message(chat_id, msg)
+
     if message == "/restart":
         log("Restart")
         global restart
@@ -241,27 +250,22 @@ def cian_parser_thread():
     log("Cian page parser thread started")
 
     while True:
-        chats_copy = chats.copy()
-
         log("Sleep: {}s".format(parser_gap))
         parser_countdown = parser_gap
         while parser_countdown>0:
             gevent.sleep(1)
             parser_countdown -= 1
 
+        chats_copy = chats.copy()
         if len(chats_copy)==0:
             continue
 
-        log("{{ parsing: \"{}\"".format(url))
+        log("PARSING: \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
         new_cian_refs, onpage_links_count = cian.parse(known_path, url)
-        if new_cian_refs is None:
-            log("}}")
-        else:
-            log("}} parsed {}, onpage_links_count {}".format(
+        if new_cian_refs is not None:
+            log("PARSED {}, onpage_links_count {}".format(
                 len(new_cian_refs), onpage_links_count))
 
-        if debug:
-            print(new_cian_refs)
         if new_cian_refs is not None and len(new_cian_refs)>0:
             for ref in new_cian_refs:
                 for chat in chats_copy:
@@ -276,12 +280,11 @@ def cian_parser_thread():
                 send_message(chat, msg)
             log(msg)
 
-        elif debug:
-            msg = "No new flats."
+        elif verbose:
+            msg = "Новых квартир нет."
             for chat in chats_copy:
                 send_message(chat, msg)
-            if verbose:
-                log(msg)
+            log(msg)
 
 
 def main():
