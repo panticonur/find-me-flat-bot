@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import urllib.request
 import urllib.parse
 import cian
+import browser
 from utils import log, save_json, load_json
 from gevent.monkey import patch_all
 
@@ -37,6 +38,8 @@ restart = 0
 cian.verbose = verbose
 cian.debug = debug
 cian.page_path = page_path
+browser.verbose = verbose
+browser.debug = debug
 print("chats: "+str(chats))
 https_handler = urllib.request.HTTPSHandler()
 tg_opener = urllib.request.build_opener(https_handler)
@@ -260,7 +263,7 @@ def cian_parser_thread():
         if len(chats_copy)==0:
             continue
 
-        log("PARSING: \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
+        log("PARSING \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
         new_cian_refs, onpage_links_count = cian.parse(known_path, url)
         if new_cian_refs is not None:
             log("PARSED {}, onpage_links_count {}".format(

@@ -6,6 +6,9 @@ from selenium.common.exceptions import WebDriverException
 import utils
 from pyvirtualdisplay.display import Display
 
+debug = True
+verbose = True
+
 def open(page_name):
     display = None
     try:
@@ -38,9 +41,11 @@ def open(page_name):
 
 
 def open_page(driver, page_name):
+    global debug, verbose
     try:
         driver.get(page_name)
-        print(f"Page Title: {driver.title}")
+        if debug:
+            print(f"Page Title: {driver.title}")
 
         WebDriverWait(driver, 20).until(
             EC.presence_of_element_located((By.TAG_NAME, "body"))

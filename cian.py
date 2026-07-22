@@ -121,7 +121,7 @@ def parse(known_path, url):
     known_refs = get_known_refs(known_path)
     new_refs = refs - known_refs
     if verbose:
-        log("all refs {}, new refs{}, known refs {}, links: {}".format(len(refs),
+        log("all refs {}, new refs {}, known refs {}, links: {}".format(len(refs),
                                                                 len(new_refs),
                                                                 len(known_refs),
                                                                 links_count))
