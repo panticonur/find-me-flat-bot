@@ -135,20 +135,22 @@ def handle_message(chat_id, message):
                      "/stop\n"+
                      "/debug")
 
+    empty_search_page_note = "Отсутствует ссылка страницу поиска.\n"+\
+        "Страница поиска должна содержать список предложений,"+\
+        "но не отображать карту.\n"+\
+        "Установить страницу командой:"
+    
     if message.find("/start") == 0:
         log("Start "+chat_id)
         if chat_id not in chats:
             chats.append(chat_id)
             log("new chat "+chat_id)
             save_json(chats_path, chats)
-            send_message(chat_id, "бот запушен")
-        else:
-            send_message(chat_id, "уже запушен")
         if url=="":
-            send_message(chat_id, "Ссылка на поиск не установлена.")
-            send_message(chat_id, "Установить ссылку командой\n/url <cian_url>")
-        send_message(chat_id, "/scan принудительное сканирование")
-        parser_countdown = 2
+            send_message(chat_id, empty_search_page_note)
+            send_message(chat_id, "/url https://www.cian.ru/...")
+        else:
+            message="/scan"
 
     if message.find("/url") == 0:
         parts = message.split(" ")
@@ -162,11 +164,9 @@ def handle_message(chat_id, message):
         else:
             log("Url")
             if url=="":
-                send_message(chat_id, "Ссылка на поиск не установлена.")
-                send_message(chat_id, "Установить ссылку командой\n/url <cian_url>\n"+
-                             "Страница поиска должна быть ввиде списка предложений, а не в виде карты.")
+                send_message(chat_id, empty_search_page_note)
+                send_message(chat_id, "/url https://www.cian.ru/...")
             else:
-                send_message(chat_id, "Ссылка на поиск:")
                 send_message(chat_id, url)
 
     if message == "/stop":
