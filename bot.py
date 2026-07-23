@@ -271,8 +271,7 @@ def cian_parser_thread():
             gevent.sleep(1)
             parser_countdown -= 1
 
-        chats_copy = chats.copy()
-        if len(chats_copy)==0 or url=="":
+        if len(chats)==0 or url=="":
             continue
 
         log("PARSING \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
@@ -283,7 +282,7 @@ def cian_parser_thread():
 
         if new_cian_refs is not None and len(new_cian_refs)>0:
             for ref in new_cian_refs:
-                for chat in chats_copy:
+                for chat in chats:
                     send_message(chat, ref)
                 if verbose:
                     log(ref)
@@ -291,13 +290,13 @@ def cian_parser_thread():
 
         elif onpage_links_count is None or onpage_links_count<5:
             msg = "Внимание!\nНе обнаружено ссылок на квартиры!\nПроверь каптчу!"
-            for chat in chats_copy:
+            for chat in chats:
                 send_message(chat, msg)
             log(msg)
 
         elif verbose or verbose_scan_chat_id!=0:
             msg = "нет новых квартир"
-            for chat in chats_copy:
+            for chat in chats:
                 if verbose or verbose_scan_chat_id==chat:
                     send_message(chat, msg)
             verbose_scan_chat_id=0
