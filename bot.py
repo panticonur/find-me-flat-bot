@@ -10,7 +10,9 @@ import browser
 from utils import log, save_json, load_json
 from gevent.monkey import patch_all
 
-
+for filename in os.listdir("/tmp/"):
+    if os.path.isfile("/tmp/"+filename):
+        os.remove("/tmp/"+filename)
 load_dotenv()
 debug = bool(os.getenv('DEBUG', 0))
 verbose = bool(os.getenv('VERBOSE', 0))
