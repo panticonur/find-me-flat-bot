@@ -112,9 +112,10 @@ def parse(known_path, url):
         if debug:
             raise
         return None, None
-    dump_page(page_data)
     #page_data = get_local_page()
     refs, links_count = get_flat_refs(page_data)
+    if links_count<10:
+        dump_page(page_data)
     refs = cut_flat_refs(refs)
     if debug:
         print("pages refs {}:\n{}", len(refs), refs)

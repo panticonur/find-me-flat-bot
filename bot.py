@@ -44,6 +44,7 @@ print("chats: "+str(chats))
 https_handler = urllib.request.HTTPSHandler()
 tg_opener = urllib.request.build_opener(https_handler)
 patch_all()
+verbose_scan_chat_id = 0
 
 def load_telegram_method(method, params):
     global debug, verbose
@@ -118,33 +119,39 @@ def bot_updater_thread():
 
 
 def handle_message(chat_id, message):
-    global debug, verbose, url
+    global debug, verbose, url, verbose_scan_chat_id
     global parser_countdown, parser_gap
 
     if message == "/help":
         log("Help")
         send_message(chat_id,
                      "/start\n"+
-                     "/stop\n"+
                      "/url <http://cian.ru/...>\n"+
                      "/scan\n"+
                      "/status\n"+
                      "/verbose\n"+
-                     "gap <seconds>\n"+
+                     "/gap <seconds>\n"+
                      "/reset\n"+
+                     "/stop\n"+
                      "/debug")
 
     if message.find("/start") == 0:
         log("Start "+chat_id)
         if chat_id not in chats:
             chats.append(chat_id)
-        save_json(chats_path, chats)
-        log("    add chat "+chat_id)
-        send_message(chat_id, "Started")
-        parser_countdown = 3
+            log("new chat "+chat_id)
+            save_json(chats_path, chats)
+            send_message(chat_id, "бот запушен")
+            send_message(chat_id, "/scan принудительное сканирование")
+        else:
+            send_message(chat_id, "уже запушен")
+            send_message(chat_id, "/scan принудительное сканирование")
+        if url=="":
+            send_message(chat_id, "Ссылка на поиск не установлена.")
+            send_message(chat_id, "Установить ссылку командой\n/url <cian_url>")
+        parser_countdown = 2
 
     if message.find("/url") == 0:
-        
         parts = message.split(" ")
         if len(parts) == 2:
             url = parts[1]
@@ -152,22 +159,28 @@ def handle_message(chat_id, message):
             log("Url "+url)
             for chat in chats:
                 send_message(chat, "Url\n"+url)
-            parser_countdown = 3
+            parser_countdown = 2
         else:
             log("Url")
-            send_message(chat_id, 
-                         "Set url: /url <cian_url>\nCurrent url: "+url)
+            if url=="":
+                send_message(chat_id, "Ссылка на поиск не установлена.")
+                send_message(chat_id, "Установить ссылку командой\n/url <cian_url>\n"+
+                             "Страница поиска должна быть ввиде списка предложений, а не в виде карты.")
+            else:
+                send_message(chat_id, "Ссылка на поиск:")
+                send_message(chat_id, url)
 
-    elif message == "/stop":
+    if message == "/stop":
         log("Stop")
         if chat_id in chats:
             chats.remove(chat_id)
             save_json(chats_path, chats)
-            log("    remove chat "+chat_id)
+            log("remove chat "+chat_id)
         send_message(chat_id, "Stopped")
 
     if message == "/scan":
-        parser_countdown = 1
+        verbose_scan_chat_id = chat_id
+        parser_countdown = 2
         log("Scan")
 
     if message.find("/gap") == 0: 
@@ -176,7 +189,7 @@ def handle_message(chat_id, message):
         if len(parts) == 2:
             parser_gap = int(parts[1])
             parser_countdown = parser_gap
-            log("  parser_gap set to {}".format(parser_gap))
+            log("`parser_gap` set to {}".format(parser_gap))
             send_message(chat_id, "Scanning gap is set to {}s".format(parser_gap))
         else:
             send_message(chat_id, u"Usage: /gap <seconds>")
@@ -186,8 +199,8 @@ def handle_message(chat_id, message):
             log("Status  {}".format(json.dumps(chats)))
         else:
             log("Status")
-        msg = "started: {}\ngap: {}/{}\nverbose: {}\ndebug: {}\n".format(
-            chat_id in chats, parser_countdown, parser_gap, verbose, debug)
+        msg = "started: {}\ngap: {}/{}\nverbose: {}\ndebug: {}\nurl: {}".format(
+            chat_id in chats, parser_countdown, parser_gap, verbose, debug, "Unset" if url=="" else "Set" )
         log(msg)
         send_message(chat_id, msg)
 
@@ -243,12 +256,12 @@ def handle_message(chat_id, message):
             os.execl(python, python, * sys.argv)
             raise SystemExit
         else:
-            log("  skip restart")
+            log("skip restart")
             send_message(chat_id, u"try again")
 
 
 def cian_parser_thread():
-    global debug, verbose
+    global debug, verbose, verbose_scan_chat_id
     global parser_countdown, parser_gap
     log("Cian page parser thread started")
 
@@ -278,15 +291,17 @@ def cian_parser_thread():
                 gevent.sleep(1)
 
         elif onpage_links_count is None or onpage_links_count<5:
-            msg = "Warning!\nGot no links on the page!\nCheck CIAN captcha!"
+            msg = "Внимание!\nНе обнаружено ссылок на квартиры!\nПроверь каптчу!"
             for chat in chats_copy:
                 send_message(chat, msg)
             log(msg)
 
-        elif verbose:
-            msg = "Новых квартир нет."
+        elif verbose or verbose_scan_chat_id!=0:
+            msg = "нет новых квартир"
             for chat in chats_copy:
-                send_message(chat, msg)
+                if verbose or verbose_scan_chat_id==chat:
+                    send_message(chat, msg)
+            verbose_scan_chat_id=0
             log(msg)
 
 
