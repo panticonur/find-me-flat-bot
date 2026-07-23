@@ -137,10 +137,10 @@ def handle_message(chat_id, message):
                      "/stop\n"+
                      "/debug")
 
-    empty_search_page_note = "Отсутствует ссылка страницу поиска.\n"+\
-        "Страница поиска должна содержать список предложений,"+\
+    empty_search_page_note = "Отсутствует ссылка на страницу поиска.\n"+\
+        "Страница поиска должна содержать список предложений, "+\
         "но не отображать карту.\n"+\
-        "Установить страницу командой:"
+        "Установить ссылку можно командой:"
     url_cmd_example = "/url https://www.cian.ru/..."
     
     if message.find("/start") == 0:
@@ -151,7 +151,7 @@ def handle_message(chat_id, message):
             save_json(chats_path, chats)
         if url=="":
             send_message(chat_id, empty_search_page_note)
-            send_message(chat_id, "/url https://www.cian.ru/...")
+            send_message(chat_id, url_cmd_example)
         else:
             message="/scan"
 
@@ -162,13 +162,13 @@ def handle_message(chat_id, message):
             save_json(url_path, url)
             log("Url "+url)
             for chat in chats:
-                send_message(chat, url)
+                send_message(chat, "Ссылка на страницу поиска установлена.")
             parser_countdown = 2
         else:
             log("Url")
             if url=="":
                 send_message(chat_id, empty_search_page_note)
-                send_message(chat_id, "/url https://www.cian.ru/...")
+                send_message(chat_id, url_cmd_example)
             else:
                 send_message(chat_id, url)
 
