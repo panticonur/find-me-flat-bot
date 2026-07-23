@@ -139,6 +139,7 @@ def handle_message(chat_id, message):
         "Страница поиска должна содержать список предложений,"+\
         "но не отображать карту.\n"+\
         "Установить страницу командой:"
+    url_cmd_example = "/url https://www.cian.ru/..."
     
     if message.find("/start") == 0:
         log("Start "+chat_id)
@@ -159,7 +160,7 @@ def handle_message(chat_id, message):
             save_json(url_path, url)
             log("Url "+url)
             for chat in chats:
-                send_message(chat, "Url\n"+url)
+                send_message(chat, url)
             parser_countdown = 2
         else:
             log("Url")
