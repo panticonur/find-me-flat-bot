@@ -18,6 +18,6 @@ RUN rm -rf data && mkdir data
 
 VOLUME ["/app/data"]
 
-RUN printf '#!/bin/sh\nexec Xvfb :99 -screen 0 1920x1080x24 & export DISPLAY=:99 && exec python bot.py\n' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+RUN printf '#!/bin/sh\nrm -rf /tmp/* && exec Xvfb :99 -screen 0 1920x1080x24 & export DISPLAY=:99 && exec python bot.py\n' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
