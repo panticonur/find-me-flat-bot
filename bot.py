@@ -9,10 +9,14 @@ import cian
 import browser
 from utils import log, save_json, load_json
 from gevent.monkey import patch_all
+import shutil
 
-for filename in os.listdir("/tmp/"):
-    if os.path.isfile("/tmp/"+filename):
-        os.remove("/tmp/"+filename)
+try:
+    shutil.rmtree("/tmp")
+    os.mkdir("/tmp")
+except:
+    log("error remove /tmp")
+
 load_dotenv()
 debug = bool(os.getenv('DEBUG', 0))
 verbose = bool(os.getenv('VERBOSE', 0))
@@ -232,6 +236,11 @@ def handle_message(chat_id, message):
             os.remove(url_path)
         except:
             log("error remove "+url_path)
+        try:
+            shutil.rmtree("/tmp")
+            os.mkdir("/tmp")
+        except:
+            log("error remove /tmp")
         send_message(chat_id, "files removed")
 
     if message == "/debug":
