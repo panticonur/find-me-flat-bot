@@ -142,13 +142,12 @@ def handle_message(chat_id, message):
             log("new chat "+chat_id)
             save_json(chats_path, chats)
             send_message(chat_id, "бот запушен")
-            send_message(chat_id, "/scan принудительное сканирование")
         else:
             send_message(chat_id, "уже запушен")
-            send_message(chat_id, "/scan принудительное сканирование")
         if url=="":
             send_message(chat_id, "Ссылка на поиск не установлена.")
             send_message(chat_id, "Установить ссылку командой\n/url <cian_url>")
+        send_message(chat_id, "/scan принудительное сканирование")
         parser_countdown = 2
 
     if message.find("/url") == 0:
@@ -273,7 +272,7 @@ def cian_parser_thread():
             parser_countdown -= 1
 
         chats_copy = chats.copy()
-        if len(chats_copy)==0:
+        if len(chats_copy)==0 or url=="":
             continue
 
         log("PARSING \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
