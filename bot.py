@@ -138,6 +138,7 @@ def handle_message(chat_id, message):
                      "/verbose\n"+
                      "/gap <seconds>\n"+
                      "/reset\n"+
+                     "/clear\n"+
                      "/stop\n"+
                      "/debug")
 
@@ -277,42 +278,53 @@ def cian_parser_thread():
     log("Cian page parser thread started")
 
     while True:
-        log("Sleep: {}s".format(parser_gap))
-        parser_countdown = parser_gap
-        while parser_countdown>0:
-            gevent.sleep(1)
-            parser_countdown -= 1
-
-        if len(chats)==0 or url=="":
-            continue
-
-        log("PARSING \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
-        new_cian_refs, onpage_links_count = cian.parse(known_path, url)
-        if new_cian_refs is not None:
-            log("PARSED {}, onpage_links_count {}".format(
-                len(new_cian_refs), onpage_links_count))
-
-        if new_cian_refs is not None and len(new_cian_refs)>0:
-            for ref in new_cian_refs:
-                for chat in chats:
-                    send_message(chat, ref)
-                if verbose:
-                    log(ref)
+        try:
+            log("Sleep: {}s".format(parser_gap))
+            parser_countdown = parser_gap
+            while parser_countdown>0:
                 gevent.sleep(1)
+                parser_countdown -= 1
 
-        elif onpage_links_count is None or onpage_links_count<5:
-            msg = "Внимание!\nНе обнаружено ссылок на квартиры!\nПроверь каптчу!"
-            for chat in chats:
-                send_message(chat, msg)
-            log(msg)
+            if len(chats)==0 or url=="":
+                continue
 
-        elif verbose or verbose_scan_chat_id!=0:
-            msg = "нет новых квартир"
-            for chat in chats:
-                if verbose or verbose_scan_chat_id==chat:
+            log("PARSING \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
+            new_cian_refs, onpage_links_count = cian.parse(known_path, url)
+            if new_cian_refs is not None:
+                log("PARSED {}, onpage_links_count {}".format(
+                    len(new_cian_refs), onpage_links_count))
+
+            if new_cian_refs is not None and len(new_cian_refs)>0:
+                for ref in new_cian_refs:
+                    for chat in chats:
+                        send_message(chat, ref)
+                    if verbose:
+                        log(ref)
+                    gevent.sleep(1)
+
+            elif onpage_links_count is None or onpage_links_count<5:
+                msg = "Внимание!\nНе обнаружено ссылок на квартиры!\nПроверь каптчу!"
+                for chat in chats:
                     send_message(chat, msg)
-            verbose_scan_chat_id=0
-            log(msg)
+                log(msg)
+
+            elif verbose or verbose_scan_chat_id!=0:
+                msg = "нет новых квартир"
+                for chat in chats:
+                    if verbose or verbose_scan_chat_id==chat:
+                        send_message(chat, msg)
+                verbose_scan_chat_id=0
+                log(msg)
+
+        except Exception as e:
+            if verbose:
+                for chat in chats:
+                    send_message(chat, "EXCEPTION Bot parser: {}".format(e))
+            log("EXCEPTION Bot updater:")
+            print(e)
+            if debug:
+                raise
+            continue
 
 
 def main():
@@ -323,3 +335,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+ 
