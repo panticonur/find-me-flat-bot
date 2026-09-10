@@ -17,7 +17,8 @@ try:
 except:
     log("error remove /tmp")
 
-load_dotenv()
+env_file = os.getenv('ENV_FILE', '.env')
+load_dotenv(env_file)
 debug = bool(os.getenv('DEBUG', 0))
 verbose = bool(os.getenv('VERBOSE', 0))
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
@@ -320,7 +321,7 @@ def cian_parser_thread():
             if verbose:
                 for chat in chats:
                     send_message(chat, "EXCEPTION Bot parser: {}".format(e))
-            log("EXCEPTION Bot updater:")
+            log("EXCEPTION Bot parser:")
             print(e)
             if debug:
                 raise
