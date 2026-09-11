@@ -41,6 +41,7 @@ url = load_json(url_path, "")
 print("url: "+url)
 parser_gap = int(PARSER_GAP)
 parser_countdown = int(PARSER_GAP)
+parser_status = "unknown"
 restart = 0
 cian.verbose = verbose
 cian.debug = debug
@@ -141,6 +142,7 @@ def handle_message(chat_id, message):
                      "/reset\n"+
                      "/clear\n"+
                      "/stop\n"+
+                     "/restart\n"+
                      "/debug")
 
     empty_search_page_note = "Отсутствует ссылка на страницу поиска.\n"+\
@@ -169,7 +171,7 @@ def handle_message(chat_id, message):
             log("Url "+url)
             for chat in chats:
                 send_message(chat, "Ссылка на страницу поиска установлена.")
-            parser_countdown = 2
+            parser_countdown = 3
         else:
             log("Url")
             if url=="":
@@ -188,7 +190,7 @@ def handle_message(chat_id, message):
 
     if message == "/scan":
         verbose_scan_chat_id = chat_id
-        parser_countdown = 2
+        parser_countdown = 3
         log("Scan")
 
     if message.find("/gap") == 0: 
@@ -207,8 +209,9 @@ def handle_message(chat_id, message):
             log("Status  {}".format(json.dumps(chats)))
         else:
             log("Status")
-        msg = "started: {}\ngap: {}/{}\nverbose: {}\ndebug: {}\nurl: {}".format(
-            chat_id in chats, parser_countdown, parser_gap, verbose, debug, "Unset" if url=="" else "Set" )
+        msg = "started: {}\ngap: {}/{}\nverbose: {}\ndebug: {}\nurl: {}\nparser: {}".format(
+            chat_id in chats, parser_countdown, parser_gap, verbose, debug,
+            "Unset" if url=="" else "Set", parser_status)
         log(msg)
         send_message(chat_id, msg)
 
@@ -275,26 +278,30 @@ def handle_message(chat_id, message):
 
 def cian_parser_thread():
     global debug, verbose, verbose_scan_chat_id
-    global parser_countdown, parser_gap
+    global parser_countdown, parser_gap, parser_status
     log("Cian page parser thread started")
 
     while True:
+        parser_status = "looping"
         try:
             log("Sleep: {}s".format(parser_gap))
             parser_countdown = parser_gap
             while parser_countdown>0:
+                parser_status = "sleeping"
                 gevent.sleep(1)
                 parser_countdown -= 1
 
             if len(chats)==0 or url=="":
                 continue
 
+            parser_status = "parsing"
             log("PARSING \"{}\"".format(url[:50] + "..." + url[-200:] if len(url) > 250 else url))
             new_cian_refs, onpage_links_count = cian.parse(known_path, url)
             if new_cian_refs is not None:
                 log("PARSED {}, onpage_links_count {}".format(
                     len(new_cian_refs), onpage_links_count))
 
+            parser_status = "sending msg"
             if new_cian_refs is not None and len(new_cian_refs)>0:
                 for ref in new_cian_refs:
                     for chat in chats:
@@ -318,12 +325,14 @@ def cian_parser_thread():
                 log(msg)
 
         except Exception as e:
+            parser_status = "exception"
             if verbose:
                 for chat in chats:
                     send_message(chat, "EXCEPTION Bot parser: {}".format(e))
             log("EXCEPTION Bot parser:")
             print(e)
             if debug:
+                parser_status = "ended"
                 raise
             continue
 
