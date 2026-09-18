@@ -1,10 +1,21 @@
 import json
 from datetime import datetime
+import os
 import os.path
+
+
+TRUE_VALUES = ("1", "true", "yes", "on")
 
 
 def log(message):
     print("[{}] {}".format(str(datetime.now()), message))
+
+
+def env_bool(name, default=False):
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in TRUE_VALUES
 
 def load_json(fname, default_value):
     if not os.path.isfile(fname):

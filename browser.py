@@ -8,6 +8,7 @@ from pyvirtualdisplay.display import Display
 
 debug = True
 verbose = True
+user_data_dir = None
 
 def open(page_name):
     display = None
@@ -26,6 +27,8 @@ def open(page_name):
         # options.add_argument("--headless")
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
+        if user_data_dir:
+            options.add_argument('--user-data-dir={}'.format(user_data_dir))
         driver = webdriver.Chrome(options=options)
         # driver.set_window_position(0, 1500)
 

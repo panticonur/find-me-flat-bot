@@ -1,34 +1,42 @@
+from gevent.monkey import patch_all
+patch_all()  # must run before ssl/socket get imported by anything below
+
 import gevent
 import json
 import os
 import sys
+import shutil
 from dotenv import load_dotenv
 import urllib.request
 import urllib.parse
 import cian
 import browser
-from utils import log, save_json, load_json
-from gevent.monkey import patch_all
-import shutil
+from utils import log, save_json, load_json, env_bool
 
-try:
-    shutil.rmtree("/tmp")
-    os.mkdir("/tmp")
-except:
-    log("error remove /tmp")
+ERROR_RETRY_DELAY = 10
 
 env_file = os.getenv('ENV_FILE', '.env')
 load_dotenv(env_file)
-debug = bool(os.getenv('DEBUG', 0))
-verbose = bool(os.getenv('VERBOSE', 0))
+debug = env_bool('DEBUG')
+verbose = env_bool('VERBOSE')
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 REQUEST_UPDATES_INTERVAL = os.getenv("REQUEST_UPDATES_INTERVAL", 45)
-PARSER_GAP = os.getenv("REQUEST_UPDATES_INTERVAL", 600)
+PARSER_GAP = os.getenv("PARSER_GAP", 600)
+BROWSER_CACHE_DIR = os.getenv("BROWSER_CACHE_DIR", "/tmp/chrome-profile")
 log("DEBUG = {}".format(debug))
 log("VERBOSE = {}".format(verbose))
-log("TG_BOT_TOKEN = {}".format(TG_BOT_TOKEN))
+log("TG_BOT_TOKEN = {}".format("set" if TG_BOT_TOKEN else None))
 log("REQUEST_UPDATES_INTERVAL = {}".format(REQUEST_UPDATES_INTERVAL))
 log("PARSER_GAP = {}".format(PARSER_GAP))
+log("BROWSER_CACHE_DIR = {}".format(BROWSER_CACHE_DIR))
+
+if os.path.isdir(BROWSER_CACHE_DIR):
+    try:
+        shutil.rmtree(BROWSER_CACHE_DIR)
+        log("browser cache cleared: {}".format(BROWSER_CACHE_DIR))
+    except Exception as e:
+        log("error clearing browser cache {}: {}".format(BROWSER_CACHE_DIR, e))
+os.makedirs(BROWSER_CACHE_DIR, exist_ok=True)
 data_dir = os.path.join(os.path.dirname(__file__), "data")
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
@@ -48,10 +56,10 @@ cian.debug = debug
 cian.page_path = page_path
 browser.verbose = verbose
 browser.debug = debug
+browser.user_data_dir = BROWSER_CACHE_DIR
 print("chats: "+str(chats))
 https_handler = urllib.request.HTTPSHandler()
 tg_opener = urllib.request.build_opener(https_handler)
-patch_all()
 verbose_scan_chat_id = 0
 
 def load_telegram_method(method, params):
@@ -96,11 +104,12 @@ def bot_updater_thread():
         try:
             updates_response = request_updates(offset)
             updates = updates_response.get("result", [])
-        except Exception as e: 
+        except Exception as e:
             log("EXCEPTION Bot updater:")
             print(e)
             if debug:
                 raise
+            gevent.sleep(ERROR_RETRY_DELAY)
             continue
 
         if debug:
